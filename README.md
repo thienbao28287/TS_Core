@@ -1,1036 +1,1086 @@
-# Bài 2 — Interface và Type Alias trong TypeScript
+# Bài 3 — Function và Generics trong TypeScript
 
 ## 1. Mục tiêu bài học
 
 Sau bài học, bạn có thể:
 
-- Mô tả cấu trúc đối tượng bằng `interface` và `type`.
-- Sử dụng thuộc tính tùy chọn `?` và thuộc tính chỉ đọc `readonly`.
-- Mở rộng interface bằng `extends`.
-- Hiểu cơ chế hợp nhất khai báo interface.
-- Phân biệt union `|` và intersection `&`.
-- Lựa chọn `interface` hoặc `type` phù hợp.
+- Khai báo kiểu cho tham số và giá trị trả về.
+- Sử dụng tham số tùy chọn, mặc định và rest.
+- Phân biệt `void` và `never`.
+- Mô tả kiểu hàm bằng interface hoặc type alias.
+- Viết hàm generic với một hoặc nhiều tham số kiểu.
+- Giới hạn tham số kiểu bằng `extends`.
+- Sử dụng generics trong interface, type alias và class.
 
-> Cách thực hành: chạy riêng từng ví dụ để tránh trùng tên khai báo. Nên bật `"strict": true` trong `tsconfig.json`.
+> Các ví dụ độc lập với nhau. Khi thực hành, chạy từng ví dụ để tránh trùng tên khai báo. Nên bật `"strict": true`.
 
 ---
 
-## 2. Interface
+## 2. Function trong TypeScript
 
-### 2.1. Định nghĩa
+### 2.1. Khai báo kiểu cho hàm
 
-`interface` mô tả cấu trúc mà một giá trị phải đáp ứng.
-
-Với đối tượng, interface thường quy định:
-
-- Tên thuộc tính.
-- Kiểu dữ liệu của thuộc tính.
-- Thuộc tính bắt buộc hoặc tùy chọn.
-- Thuộc tính chỉ đọc.
-- Các phương thức.
-
-Interface không tự tạo ra đối tượng hoặc giá trị mặc định.
-
-### 2.2. Ví dụ cơ bản
+Có thể khai báo kiểu cho từng tham số và giá trị trả về.
 
 ```typescript
-interface User {
-  id: number;
-  name: string;
-  isActive: boolean;
+function add(a: number, b: number): number {
+  return a + b;
 }
 
-const user: User = {
-  id: 1,
-  name: "Bao",
-  isActive: true,
-};
+console.log(add(10, 5)); // 15
 
-console.log(user.name);     // Bao
-console.log(user.isActive); // true
+// Lỗi: tham số thứ hai phải là number.
+// add(10, "5");
 ```
 
-Đối tượng `user` phải đáp ứng cấu trúc của `User`.
+Trong ví dụ:
+
+- `a: number`: tham số a phải là số.
+- `b: number`: tham số b phải là số.
+- `): number`: hàm trả về số.
+
+Nếu đã khai báo trả về `number`, không thể trả về chuỗi.
 
 ```typescript
-interface User {
-  id: number;
-  name: string;
-  isActive: boolean;
+function subtract(a: number, b: number): number {
+  return a - b;
+
+  // Nếu thay return phía trên bằng dòng dưới sẽ sai kiểu:
+  // return "Kết quả";
 }
-
-// Lỗi: thiếu thuộc tính isActive.
-// const user: User = {
-//   id: 1,
-//   name: "Bao",
-// };
-
-// Lỗi: id phải là number.
-// const anotherUser: User = {
-//   id: "1",
-//   name: "An",
-//   isActive: true,
-// };
 ```
 
 ---
 
-### 2.3. Thuộc tính tùy chọn — Optional property
+### 2.2. Suy luận kiểu trả về
 
-Dùng `?` để cho phép một thuộc tính được bỏ qua.
+TypeScript có thể suy luận kiểu từ phần thân hàm.
 
 ```typescript
-interface User {
-  id: number;
-  name: string;
-  email?: string;
+function multiply(a: number, b: number) {
+  return a * b;
 }
 
-const userWithoutEmail: User = {
-  id: 1,
-  name: "Bao",
-};
+const result = multiply(4, 5);
 
-const userWithEmail: User = {
-  id: 2,
-  name: "An",
-  email: "an@example.com",
-};
-
-console.log(userWithoutEmail.email); // undefined
-console.log(userWithEmail.email);    // an@example.com
+console.log(result); // 20
 ```
 
-Khi bật kiểm tra null nghiêm ngặt, đọc `email` cho kết quả có kiểu `string | undefined`. Cần kiểm tra trước khi dùng phương thức chuỗi.
+Kiểu trả về của `multiply` được suy luận là `number`.
+
+Khi mới học, viết rõ kiểu trả về giúp bạn dễ kiểm tra ý định của hàm.
+
+---
+
+### 2.3. Arrow function
+
+Arrow function cũng có thể khai báo đầy đủ kiểu.
 
 ```typescript
-interface User {
-  id: number;
-  name: string;
-  email?: string;
-}
+const divide = (a: number, b: number): number => {
+  return a / b;
+};
 
-function printEmail(user: User): void {
-  if (user.email !== undefined) {
-    console.log(user.email.toLowerCase());
-  } else {
-    console.log("Chưa có email");
+console.log(divide(10, 2)); // 5
+```
+
+Với biểu thức đơn giản, có thể viết ngắn:
+
+```typescript
+const square = (value: number): number => value * value;
+
+console.log(square(5)); // 25
+```
+
+---
+
+### 2.4. Tham số tùy chọn — Optional parameter
+
+Dùng `?` để cho phép bỏ qua tham số.
+
+```typescript
+function introduce(name: string, age?: number): string {
+  if (age !== undefined) {
+    return `${name}, ${age} tuổi`;
   }
+
+  return name;
 }
 
-printEmail({ id: 1, name: "Bao" });
-// Chưa có email
-
-printEmail({
-  id: 2,
-  name: "An",
-  email: "AN@EXAMPLE.COM",
-});
-// an@example.com
+console.log(introduce("Bao"));     // Bao
+console.log(introduce("Bao", 20)); // Bao, 20 tuổi
+console.log(introduce("An", 0));   // An, 0 tuổi
 ```
 
-> Thuộc tính tùy chọn không có nghĩa là có giá trị mặc định.
+Trong thân hàm, `age` có thể là `number` hoặc `undefined`.
 
----
+Lưu ý:
 
-### 2.4. Thuộc tính chỉ đọc — Readonly
-
-Dùng `readonly` để ngăn gán lại thuộc tính qua kiểu đã khai báo.
-
-```typescript
-interface User {
-  readonly id: number;
-  name: string;
-}
-
-const user: User = {
-  id: 1,
-  name: "Bao",
-};
-
-user.name = "Thien Bao"; // Hợp lệ
-
-// Lỗi kiểm tra kiểu:
-// user.id = 2;
-
-console.log(user.name); // Thien Bao
-```
-
-#### Phân biệt const và readonly
-
-| Cách dùng | Ý nghĩa |
-| --- | --- |
-| `const user = ...` | Không được gán lại biến `user` |
-| `readonly id: number` | Không được gán lại thuộc tính `id` thông qua kiểu đó |
-
-`readonly` không tự làm toàn bộ dữ liệu bên trong bất biến:
+- Tham số tùy chọn đứng sau các tham số bắt buộc thông thường.
+- Nên kiểm tra `age !== undefined` nếu muốn chấp nhận cả số `0`.
+- `if (age)` sẽ coi `0` là falsy, nên không phù hợp trong ví dụ này.
 
 ```typescript
-interface Team {
-  readonly members: string[];
-}
-
-const team: Team = {
-  members: ["Bao"],
-};
-
-team.members.push("An"); // Hợp lệ
-
-// Không được thay cả mảng:
-// team.members = ["Binh"];
-```
-
-Muốn ngăn sửa phần tử qua thuộc tính này, dùng mảng chỉ đọc:
-
-```typescript
-interface Team {
-  readonly members: readonly string[];
-}
-
-const team: Team = {
-  members: ["Bao"],
-};
-
-// Lỗi kiểm tra kiểu:
-// team.members.push("An");
-```
-
-> `readonly` là ràng buộc kiểm tra kiểu; không tự đóng băng đối tượng JavaScript khi chạy.
-
----
-
-### 2.5. Mở rộng interface — Extends
-
-Dùng `extends` để tạo interface mới dựa trên cấu trúc đã có.
-
-```typescript
-interface User {
-  readonly id: number;
-  name: string;
-  isActive: boolean;
-  email?: string;
-}
-
-interface Employee extends User {
-  department: string;
-  salary: number;
-}
-
-const employee: Employee = {
-  id: 5,
-  name: "Bao",
-  isActive: true,
-  email: "bao@example.com",
-  department: "Engineering",
-  salary: 7000,
-};
-
-console.log(employee.name);       // Bao
-console.log(employee.department); // Engineering
-console.log(employee.salary);     // 7000
-```
-
-`Employee` bao gồm thuộc tính từ `User` và các thuộc tính khai báo thêm.
-
-Có thể mở rộng nhiều interface nếu các thành viên tương thích:
-
-```typescript
-interface Named {
-  name: string;
-}
-
-interface Contactable {
-  email: string;
-}
-
-interface Employee extends Named, Contactable {
-  salary: number;
-}
-
-const employee: Employee = {
-  name: "Bao",
-  email: "bao@example.com",
-  salary: 7000,
-};
-
-console.log(employee);
-```
-
----
-
-### 2.6. Hợp nhất khai báo — Declaration merging
-
-Các khai báo interface cùng tên trong cùng phạm vi có thể hợp nhất.
-
-```typescript
-interface Employee {
-  name: string;
-}
-
-interface Employee {
-  department: string;
-}
-
-const employee: Employee = {
-  name: "Bao",
-  department: "Engineering",
-};
-
-console.log(employee.name);
-console.log(employee.department);
-```
-
-Interface `Employee` sau khi hợp nhất yêu cầu cả `name` và `department`.
-
-#### Điều kiện cần chú ý
-
-Các thuộc tính dữ liệu trùng tên phải có kiểu và modifier tương thích.
-
-```typescript
-interface Profile {
-  id: number;
-}
-
-// Nếu bỏ comment, sẽ có lỗi vì id được khai báo khác kiểu:
-// interface Profile {
-//   id: string;
+// Sai: tham số bắt buộc đứng sau tham số tùy chọn.
+// function introduce(age?: number, name: string): string {
+//   return name;
 // }
 ```
 
-Merging không ghi đè kiểu của thuộc tính đã có.
+---
 
-#### Ví dụ kết hợp extends và merging
+### 2.5. Tham số mặc định — Default parameter
+
+Dùng `=` để đặt giá trị mặc định.
 
 ```typescript
-interface User {
-  readonly id: number;
-  name: string;
-  isActive: boolean;
-  email?: string;
+function greet(name: string = "Bạn"): string {
+  return `Xin chào ${name}`;
 }
 
-interface Employee {
-  department: string;
-}
-
-interface Employee extends User {
-  salary: number;
-}
-
-const employee: Employee = {
-  id: 5,
-  name: "Bao",
-  isActive: true,
-  email: "bao@example.com",
-  salary: 7000,
-  department: "Engineering",
-};
-
-console.log(employee);
+console.log(greet());          // Xin chào Bạn
+console.log(greet("Bao"));     // Xin chào Bao
+console.log(greet(undefined)); // Xin chào Bạn
+console.log(greet(""));        // Xin chào 
 ```
 
-Cấu trúc cuối cùng của `Employee` gồm:
+Giá trị mặc định được dùng khi:
 
-- `id`, `name`, `isActive`, `email?` từ `User`.
-- `department` từ khai báo đầu.
-- `salary` từ khai báo thứ hai.
+- Không truyền đối số tương ứng.
+- Truyền `undefined`.
 
-> Trong code thông thường, nếu không có nhu cầu merging, gom các thuộc tính vào một khai báo sẽ dễ theo dõi hơn.
+Chuỗi rỗng `""`, số `0` và `false` không tự kích hoạt giá trị mặc định.
+
+Không viết đồng thời `?` và giá trị mặc định cho cùng một tham số.
+
+```typescript
+// Không hợp lệ:
+// function greet(name?: string = "Bạn") {}
+```
 
 ---
 
-### 2.7. Interface có phương thức
+### 2.6. Tham số rest
+
+Rest parameter gom nhiều đối số thành một mảng.
 
 ```typescript
-interface Greeter {
-  name: string;
-  greet(): string;
+function sum(...numbers: number[]): number {
+  let total = 0;
+
+  for (const value of numbers) {
+    total += value;
+  }
+
+  return total;
 }
 
-const greeter: Greeter = {
-  name: "Bao",
-
-  greet() {
-    return `Xin chào, tôi là ${this.name}`;
-  },
-};
-
-console.log(greeter.greet());
-// Xin chào, tôi là Bao
+console.log(sum(1, 2, 3)); // 6
+console.log(sum(5, 10));   // 15
+console.log(sum());       // 0
 ```
 
-`greet(): string` mô tả phương thức không nhận tham số và trả về chuỗi.
+`numbers` có kiểu `number[]`.
 
-### 2.8. Interface mô tả hàm
+> Rest parameter phải đứng cuối danh sách tham số.
+
+---
+
+## 3. Void và Never
+
+### 3.1. Void
+
+Dùng `void` khi hàm không cung cấp kết quả hữu ích cho nơi gọi.
 
 ```typescript
-interface AddFunction {
+function printMessage(message: string): void {
+  console.log(message);
+}
+
+printMessage("Đang học TypeScript");
+```
+
+Hàm này thực hiện việc in thông báo rồi kết thúc bình thường.
+
+Có thể dùng `return;` để kết thúc sớm:
+
+```typescript
+function printName(name: string): void {
+  if (name === "") {
+    return;
+  }
+
+  console.log(name);
+}
+
+printName("Bao"); // Bao
+printName("");    // Không in gì
+```
+
+Với hàm được chú thích trực tiếp là `void`, không trả về một số hoặc chuỗi:
+
+```typescript
+// Lỗi:
+// function printMessage(): void {
+//   return 123;
+// }
+```
+
+### Lưu ý thêm về kiểu hàm trả về void
+
+Khi gán một hàm vào kiểu `() => void`, TypeScript có thể chấp nhận hàm thực tế trả về giá trị. Khi gọi thông qua kiểu đó, kết quả được xem là `void`.
+
+```typescript
+const action: () => void = () => 123;
+
+const result = action(); // Kiểu của result là void
+
+// Không được dùng result như một số:
+// console.log(result + 1);
+```
+
+Phần này thường gặp với callback; không có nghĩa `void` tự xóa giá trị trả về lúc runtime.
+
+---
+
+### 3.2. Never
+
+Dùng `never` khi hàm không thể hoàn tất bằng cách trả về bình thường.
+
+Ví dụ: hàm luôn ném lỗi.
+
+```typescript
+function fail(message: string): never {
+  throw new Error(message);
+}
+
+// Bỏ comment để quan sát lỗi:
+// fail("Dữ liệu không hợp lệ");
+```
+
+Sau lời gọi `fail()`, luồng thực thi không tiếp tục bình thường. Lỗi có thể được bắt bởi `try...catch` ở bên ngoài.
+
+Một hàm có vòng lặp vô hạn cũng có thể trả về `never`, nhưng không cần chạy ví dụ đó khi học.
+
+### 3.3. So sánh
+
+| Tiêu chí | `void` | `never` |
+| --- | --- | --- |
+| Ý nghĩa | Không cung cấp kết quả hữu ích | Không trả về bình thường |
+| Có thể chạy xong bình thường | Có | Không |
+| Ví dụ | In thông báo | Luôn ném lỗi |
+| Mục đích | Thể hiện hàm dùng để thực hiện hành động | Thể hiện nhánh thực thi không tiếp tục bình thường |
+
+---
+
+## 4. Định nghĩa kiểu hàm
+
+### 4.1. Dùng type alias
+
+```typescript
+type MathOperation = (a: number, b: number) => number;
+
+const subtract: MathOperation = (a, b) => a - b;
+const multiply: MathOperation = (a, b) => a * b;
+
+console.log(subtract(10, 5)); // 5
+console.log(multiply(10, 5)); // 50
+```
+
+TypeScript suy luận kiểu của `a` và `b` từ `MathOperation`.
+
+### 4.2. Dùng interface
+
+```typescript
+interface MathOperation {
   (a: number, b: number): number;
 }
 
-const add: AddFunction = (a, b) => a + b;
+const add: MathOperation = (a, b) => a + b;
 
-console.log(add(3, 5)); // 8
+console.log(add(10, 5)); // 15
 ```
 
-Cú pháp bên trong `AddFunction` là chữ ký gọi hàm.
+Chú ý cú pháp:
 
-Với class, có thể dùng `implements` để yêu cầu class đáp ứng cấu trúc interface. Phần triển khai class sẽ học kỹ ở bài OOP.
+```typescript
+// Type alias dùng =>
+type OperationType = (a: number, b: number) => number;
+
+// Chữ ký gọi trong interface dùng :
+interface OperationInterface {
+  (a: number, b: number): number;
+}
+```
+
+### 4.3. Hàm nhận một hàm khác — Callback
+
+```typescript
+type MathOperation = (a: number, b: number) => number;
+
+function calculate(
+  a: number,
+  b: number,
+  operation: MathOperation,
+): number {
+  return operation(a, b);
+}
+
+const add: MathOperation = (a, b) => a + b;
+
+console.log(calculate(10, 5, add)); // 15
+console.log(calculate(10, 5, (a, b) => a - b)); // 5
+```
+
+`operation` là callback: hàm được truyền vào một hàm khác.
 
 ---
 
-## 3. Type Alias
+## 5. Generics
 
-### 3.1. Định nghĩa
+### 5.1. Định nghĩa
 
-Type alias dùng từ khóa `type` để đặt tên cho một kiểu.
+Generics cho phép khai báo tham số kiểu để tái sử dụng một cấu trúc hoặc logic với nhiều kiểu dữ liệu.
 
-Có thể đặt tên cho:
-
-- Kiểu cơ bản.
-- Object.
-- Mảng và tuple.
-- Hàm.
-- Union.
-- Intersection.
-
-### 3.2. Đặt tên cho kiểu cơ bản
+Ví dụ phổ biến:
 
 ```typescript
-type UserName = string;
-type Age = number;
-
-const userName: UserName = "Bao";
-const age: Age = 20;
-
-console.log(userName);
-console.log(age);
+function identity<T>(value: T): T {
+  return value;
+}
 ```
 
-`UserName` vẫn là bí danh của `string`; không trở thành kiểu riêng biệt với mọi chuỗi khác.
+Ý nghĩa:
+
+- `<T>`: khai báo một tham số kiểu tên là T.
+- `value: T`: tham số value có kiểu T.
+- `: T`: kết quả trả về có kiểu T.
+
+`T` là tên do người viết chọn. Có thể dùng tên khác như `Value`, `Item` hoặc `Data`.
+
+```typescript
+function identity<Value>(value: Value): Value {
+  return value;
+}
+```
 
 ---
 
-### 3.3. Type alias cho object
+### 5.2. Truyền kiểu rõ ràng
 
 ```typescript
-type UserProfile = {
-  readonly id: number;
-  name: string;
-  isActive: boolean;
-  email?: string;
-};
+function identity<T>(value: T): T {
+  return value;
+}
 
-const user: UserProfile = {
+const numberValue = identity<number>(10);
+const stringValue = identity<string>("Hello");
+const booleanValue = identity<boolean>(true);
+
+console.log(numberValue);  // 10
+console.log(stringValue);  // Hello
+console.log(booleanValue); // true
+
+// Lỗi: đã chọn T là number nên đối số phải là số.
+// identity<number>("10");
+```
+
+---
+
+### 5.3. Suy luận tham số kiểu
+
+Không phải lúc nào cũng cần viết `<number>` hoặc `<string>`.
+
+```typescript
+function identity<T>(value: T): T {
+  return value;
+}
+
+const message = identity("Hello");
+const user = identity({
   id: 1,
   name: "Bao",
-  isActive: true,
-};
+});
 
-user.name = "Thien Bao"; // Hợp lệ
+console.log(message.toUpperCase()); // HELLO
+console.log(user.name);             // Bao
 
-// Lỗi:
-// user.id = 2;
-
-console.log(user);
+// Lỗi: đối tượng không có thuộc tính salary.
+// console.log(user.salary);
 ```
 
-Object type được đặt tên bằng `type` cũng hỗ trợ `?` và `readonly`.
+TypeScript suy luận tham số kiểu từ dữ liệu truyền vào.
+
+> Generics không chỉ áp dụng cho number và string.
 
 ---
 
-### 3.4. Union type — Dấu |
-
-Union cho phép giá trị thuộc ít nhất một trong các kiểu thành phần.
+### 5.4. Generics khác any như thế nào?
 
 ```typescript
-type ID = number | string;
+function identityAny(value: any): any {
+  return value;
+}
 
-let userId: ID = 1;
-userId = "USER-001";
+function identityGeneric<T>(value: T): T {
+  return value;
+}
 
-// Lỗi:
-// userId = true;
+const first = identityAny(10);
+const second = identityGeneric<number>(10);
+
+// Được trình kiểm tra kiểu cho phép,
+// nhưng nếu chạy sẽ gặp lỗi:
+// first.toUpperCase();
+
+// Bị TypeScript phát hiện là sai kiểu:
+// second.toUpperCase();
+
+console.log(second.toFixed(2)); // 10.00
 ```
 
-Cách đọc:
+| Cách khai báo | Kiểu kết quả |
+| --- | --- |
+| `(value: any): any` | Kết quả là any, mất thông tin kiểu cụ thể |
+| `<T>(value: T): T` | Kết quả gắn với tham số kiểu T |
 
-```text
-number | string
-```
+Điểm quan trọng của generics là thể hiện quan hệ giữa các kiểu, không chỉ chấp nhận nhiều kiểu dữ liệu.
 
-Là: **số hoặc chuỗi**.
+---
 
-Muốn thực hiện thao tác riêng của một kiểu, cần thu hẹp kiểu trước:
+## 6. Generics với mảng
+
+### 6.1. Đưa một giá trị vào mảng
 
 ```typescript
-type ID = number | string;
+function wrapInArray<T>(value: T): T[] {
+  return [value];
+}
 
-function formatId(id: ID): string {
-  if (typeof id === "string") {
-    return id.toUpperCase();
+const numbers = wrapInArray(10);
+const names = wrapInArray("Bao");
+
+console.log(numbers); // [10]
+console.log(names);   // ["Bao"]
+
+// Lỗi: numbers là mảng số.
+// numbers.push("Hello");
+```
+
+### 6.2. Lấy phần tử đầu tiên
+
+Mảng có thể rỗng, nên cần thể hiện khả năng trả về `undefined`.
+
+```typescript
+function getFirst<T>(items: T[]): T | undefined {
+  return items[0];
+}
+
+const firstNumber = getFirst([10, 20, 30]);
+const firstName = getFirst(["Bao", "An"]);
+const emptyResult = getFirst<number>([]);
+
+console.log(firstNumber); // 10
+console.log(firstName);   // Bao
+console.log(emptyResult); // undefined
+```
+
+Kiểm tra trước khi dùng kết quả:
+
+```typescript
+function getFirst<T>(items: T[]): T | undefined {
+  return items[0];
+}
+
+const first = getFirst([10, 20]);
+
+if (first !== undefined) {
+  console.log(first.toFixed(2)); // 10.00
+}
+```
+
+> Không nên khai báo trả về T nếu hàm thực tế có thể trả về undefined.
+
+---
+
+## 7. Generics với nhiều tham số kiểu
+
+Có thể dùng nhiều tham số kiểu khi các vị trí có vai trò độc lập.
+
+```typescript
+function createPair<T, U>(first: T, second: U): [T, U] {
+  return [first, second];
+}
+
+const firstPair = createPair<string, number>("Bao", 20);
+const secondPair = createPair(1, true);
+
+console.log(firstPair);  // ["Bao", 20]
+console.log(secondPair); // [1, true]
+```
+
+Trong `firstPair`:
+
+- `T` là `string`.
+- `U` là `number`.
+- Kết quả có kiểu `[string, number]`.
+
+`T` và `U` cũng có thể là cùng một kiểu:
+
+```typescript
+function createPair<T, U>(first: T, second: U): [T, U] {
+  return [first, second];
+}
+
+const pair = createPair("Bao", "An");
+
+console.log(pair); // ["Bao", "An"]
+```
+
+> Hai tham số kiểu khác tên không có nghĩa chúng bắt buộc phải nhận hai kiểu khác nhau.
+
+---
+
+## 8. Giới hạn kiểu generic — Constraints
+
+### 8.1. Vì sao cần giới hạn?
+
+Khi chưa có ràng buộc, `T` có thể là kiểu bất kỳ. Không thể giả định giá trị có thuộc tính `length`.
+
+```typescript
+function inspect<T>(value: T): T {
+  // Lỗi: chưa biết T có length hay không.
+  // console.log(value.length);
+
+  return value;
+}
+```
+
+### 8.2. Dùng extends để đặt ràng buộc
+
+```typescript
+interface HasLength {
+  length: number;
+}
+
+function getLength<T extends HasLength>(value: T): number {
+  return value.length;
+}
+
+console.log(getLength("Hello"));      // 5
+console.log(getLength([10, 20, 30])); // 3
+console.log(getLength({ length: 8 })); // 8
+
+// Lỗi: number không đáp ứng HasLength.
+// getLength(123);
+```
+
+`T extends HasLength` nghĩa là T phải có cấu trúc đáp ứng `HasLength`.
+
+Đây là ràng buộc kiểu, không yêu cầu giá trị phải được tạo từ một class cụ thể.
+
+### 8.3. Vừa giới hạn vừa giữ kiểu đầu vào
+
+```typescript
+function describeLength<T extends { length: number }>(
+  value: T,
+): [T, number] {
+  return [value, value.length];
+}
+
+const [items, length] = describeLength(["Bao", "An"]);
+
+console.log(items);  // ["Bao", "An"]
+console.log(length); // 2
+
+items.push("Binh"); // Hợp lệ vì items vẫn có kiểu mảng chuỗi
+```
+
+Nếu chỉ cần đọc `length` và trả về số, có thể viết đơn giản:
+
+```typescript
+function getLength(value: { length: number }): number {
+  return value.length;
+}
+```
+
+> Dùng generics khi cần giữ hoặc liên kết thông tin kiểu. Không cần thêm `<T>` vào mọi hàm.
+
+---
+
+## 9. Generics trong interface
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
+
+interface User {
+  id: number;
+  name: string;
+}
+
+const userResponse: ApiResponse<User> = {
+  success: true,
+  data: {
+    id: 1,
+    name: "Bao",
+  },
+};
+
+const scoresResponse: ApiResponse<number[]> = {
+  success: true,
+  data: [7, 8, 9],
+};
+
+console.log(userResponse.data.name); // Bao
+console.log(scoresResponse.data);   // [7, 8, 9]
+```
+
+Với mỗi lần sử dụng `ApiResponse<T>`, thuộc tính `data` nhận kiểu tương ứng.
+
+> Khai báo này mô tả cấu trúc dữ liệu; không tự xác thực phản hồi API khi chạy.
+
+---
+
+## 10. Generics trong type alias
+
+### 10.1. Kiểu object
+
+```typescript
+type Box<T> = {
+  value: T;
+};
+
+const numberBox: Box<number> = {
+  value: 100,
+};
+
+const stringBox: Box<string> = {
+  value: "TypeScript",
+};
+
+console.log(numberBox.value); // 100
+console.log(stringBox.value); // TypeScript
+```
+
+### 10.2. Kiểu tuple
+
+```typescript
+type Pair<T, U> = [T, U];
+
+const student: Pair<string, number> = ["Bao", 20];
+const result: Pair<boolean, string> = [true, "Thành công"];
+
+console.log(student);
+console.log(result);
+```
+
+### 10.3. Kiểu hàm
+
+```typescript
+type Transformer<Input, Output> = (value: Input) => Output;
+
+const getTextLength: Transformer<string, number> = (value) => {
+  return value.length;
+};
+
+console.log(getTextLength("Hello")); // 5
+```
+
+Ở đây, kiểu đầu vào và đầu ra có thể khác nhau.
+
+---
+
+## 11. Generics trong class
+
+Class cũng có thể nhận tham số kiểu.
+
+```typescript
+class ValueBox<T> {
+  private value: T;
+
+  constructor(initialValue: T) {
+    this.value = initialValue;
   }
 
-  return `ID-${id}`;
+  getValue(): T {
+    return this.value;
+  }
+
+  setValue(newValue: T): void {
+    this.value = newValue;
+  }
 }
 
-console.log(formatId("user-001")); // USER-001
-console.log(formatId(5));          // ID-5
+const numberBox = new ValueBox<number>(10);
+
+numberBox.setValue(20);
+console.log(numberBox.getValue()); // 20
+
+// Lỗi: hộp này nhận number.
+// numberBox.setValue("Hello");
+
+const stringBox = new ValueBox<string>("Hello");
+
+stringBox.setValue("TypeScript");
+console.log(stringBox.getValue()); // TypeScript
 ```
 
-Có thể dùng union với các giá trị chuỗi cụ thể:
+Giải thích:
 
-```typescript
-type OrderStatus = "pending" | "paid" | "cancelled";
+- `constructor`: khởi tạo dữ liệu khi dùng `new`.
+- `private value`: thuộc tính chỉ được truy cập trực tiếp bên trong class theo kiểm tra kiểu.
+- `getValue()`: đọc giá trị.
+- `setValue()`: cập nhật giá trị đúng kiểu T.
 
-let orderStatus: OrderStatus = "pending";
-orderStatus = "paid";
-
-// Lỗi: không thuộc các giá trị cho phép.
-// orderStatus = "shipping";
-```
+Class `ValueBox` tồn tại lúc runtime. Tham số kiểu T chỉ phục vụ kiểm tra kiểu và không tồn tại như một giá trị JavaScript.
 
 ---
 
-### 3.5. Intersection type — Dấu &
+## 12. Phân biệt các cách khai báo hàm
 
-Intersection yêu cầu giá trị đáp ứng đồng thời tất cả các kiểu thành phần.
+Không nên so sánh “function” và “generics” như hai loại thay thế nhau.
 
-```typescript
-type Person = {
-  name: string;
-  age: number;
-};
+Nên so sánh cách một hàm sử dụng kiểu:
 
-type Contact = {
-  email: string;
-};
+| Cách viết | Ví dụ | Khi phù hợp |
+| --- | --- | --- |
+| Hàm với kiểu cụ thể | `(a: number, b: number) => number` | Phép tính với số |
+| Hàm với union | `(value: string | number) => string` | Xử lý các kiểu đã xác định |
+| Hàm generic | `<T>(value: T) => T` | Giữ quan hệ kiểu giữa đầu vào và kết quả |
+| Generic có ràng buộc | `<T extends HasLength>(value: T) => T` | Giữ kiểu cụ thể và yêu cầu một cấu trúc chung |
 
-type ContactPerson = Person & Contact;
-
-const person: ContactPerson = {
-  name: "Bao",
-  age: 20,
-  email: "bao@example.com",
-};
-
-console.log(person);
-```
-
-Cách đọc:
-
-```text
-Person & Contact
-```
-
-Là: **vừa đáp ứng Person, vừa đáp ứng Contact**.
-
-#### Union và intersection
-
-| Kiểu | Ý nghĩa |
-| --- | --- |
-| `A | B` | Đáp ứng ít nhất một trong hai kiểu |
-| `A & B` | Đáp ứng đồng thời cả hai kiểu |
-
-#### Intersection không ghi đè thuộc tính
+Ví dụ:
 
 ```typescript
-type NumericId = {
-  id: number;
-};
+function double(value: number): number {
+  return value * 2;
+}
 
-type TextId = {
-  id: string;
-};
+function toText(value: string | number): string {
+  return String(value);
+}
 
-type ConflictingId = NumericId & TextId;
+function identity<T>(value: T): T {
+  return value;
+}
 ```
 
-`ConflictingId.id` phải đồng thời là `number` và `string`, nên có kiểu `never`: không có giá trị hợp lệ đáp ứng yêu cầu này.
-
-```typescript
-// Đều không hợp lệ:
-// const first: ConflictingId = { id: 1 };
-// const second: ConflictingId = { id: "1" };
-```
-
-> Dấu `&` kết hợp yêu cầu về kiểu; không hoạt động như thao tác ghi đè thuộc tính của object.
+Mỗi hàm trên đều có mục đích phù hợp riêng.
 
 ---
 
-### 3.6. Type alias cho tuple và hàm
+## 13. Năm bài tập thực hành
+
+### Bài tập 1 — Tính tiền mua hàng
+
+**Kiến thức:** kiểu tham số, kiểu trả về, tham số mặc định.
+
+Viết hàm:
 
 ```typescript
-type ProductTuple = [string, number];
-
-const product: ProductTuple = ["Laptop", 20000000];
-
-console.log(product[0]); // Laptop
-console.log(product[1]); // 20000000
+function calculateTotal(
+  price: number,
+  quantity: number = 1,
+): number {
+  // TODO: Trả về tổng tiền.
+  return 0;
+}
 ```
 
+**Yêu cầu:**
+
+1. Trả về `price * quantity`.
+2. Khi không truyền quantity, sử dụng số lượng mặc định là `1`.
+3. Thử truyền chuỗi vào price để quan sát lỗi, rồi comment dòng đó.
+
+**Các trường hợp cần kiểm tra:**
+
 ```typescript
-type CalculateTotal = (price: number, quantity: number) => number;
-
-const calculateTotal: CalculateTotal = (price, quantity) => {
-  return price * quantity;
-};
-
 console.log(calculateTotal(100000, 3)); // 300000
+console.log(calculateTotal(100000));    // 100000
+console.log(calculateTotal(100000, 0)); // 0
 ```
+
+**Câu cần giải thích:** Vì sao truyền `0` không khiến quantity trở thành `1`?
 
 ---
 
-## 4. Kết hợp interface và type alias
+### Bài tập 2 — Giới thiệu người dùng
 
-Có thể dùng cả hai trong cùng chương trình.
+**Kiến thức:** type alias cho hàm, tham số tùy chọn, void.
 
-### 4.1. Interface sử dụng type alias
-
-```typescript
-type ID = number | string;
-type UserRole = "admin" | "member";
-
-interface User {
-  readonly id: ID;
-  name: string;
-  role: UserRole;
-}
-
-const user: User = {
-  id: "USER-001",
-  name: "Bao",
-  role: "admin",
-};
-
-console.log(user);
-```
-
-### 4.2. Dùng interface trong intersection
+Khai báo kiểu:
 
 ```typescript
-interface User {
-  id: number;
-  name: string;
-}
-
-type Employee = User & {
-  department: string;
-  salary: number;
-};
-
-const employee: Employee = {
-  id: 1,
-  name: "Bao",
-  department: "Engineering",
-  salary: 7000,
-};
-
-console.log(employee);
+type FormatUser = (name: string, age?: number) => string;
 ```
-
-### 4.3. Interface mở rộng object type alias
-
-```typescript
-type Person = {
-  name: string;
-};
-
-interface Employee extends Person {
-  salary: number;
-}
-
-const employee: Employee = {
-  name: "Bao",
-  salary: 7000,
-};
-
-console.log(employee);
-```
-
-Interface có thể mở rộng object type phù hợp có các thành viên xác định. Không thể trực tiếp `extends` một union như `string | number`.
-
----
-
-## 5. So sánh interface và type alias
-
-| Tiêu chí | Interface | Type alias |
-| --- | --- | --- |
-| Từ khóa | `interface` | `type` |
-| Mô tả object | Có | Có |
-| Thuộc tính `?`, `readonly` | Có | Có, trong object type |
-| Mô tả hàm | Có, qua chữ ký gọi | Có, qua function type |
-| Đặt tên cho kiểu cơ bản | Không trực tiếp | Có |
-| Đặt tên trực tiếp cho union | Không | Có |
-| Mở rộng hoặc kết hợp cấu trúc | `extends` | `&` |
-| Hợp nhất khai báo cùng tên | Có, khi hợp lệ | Không |
-| Tồn tại như giá trị lúc runtime | Không | Không |
-| Tự xác thực dữ liệu API | Không | Không |
-
-### Lưu ý về type alias trùng tên
-
-```typescript
-type User = {
-  name: string;
-};
-
-// Lỗi khai báo trùng tên:
-// type User = {
-//   age: number;
-// };
-```
-
-Muốn kết hợp, tạo một kiểu mới:
-
-```typescript
-type User = {
-  name: string;
-};
-
-type UserWithAge = User & {
-  age: number;
-};
-
-const user: UserWithAge = {
-  name: "Bao",
-  age: 20,
-};
-```
-
----
-
-## 6. Khi nào dùng interface, khi nào dùng type?
-
-### Ưu tiên interface khi
-
-- Mô tả cấu trúc object.
-- Muốn thể hiện quan hệ mở rộng bằng `extends`.
-- Cần declaration merging.
-
-### Ưu tiên type khi
-
-- Đặt tên cho union, tuple hoặc kiểu cơ bản.
-- Kết hợp các kiểu bằng intersection.
-- Muốn viết kiểu hàm theo cú pháp `(thamSố) => kiểuTrảVề`.
-
-Với object thông thường, cả hai đều dùng được. Chọn theo nhu cầu và giữ cách viết nhất quán trong dự án.
-
-### Lưu ý về runtime
-
-`interface` và `type` phục vụ kiểm tra kiểu, không tự kiểm tra giá trị từ API hay dữ liệu người dùng.
-
-Ví dụ, khai báo `email: string` không tự xác nhận chuỗi đó là địa chỉ email hợp lệ. Việc xác thực dữ liệu cần code xử lý khi chạy.
-
----
-
-## 7. Năm bài tập thực hành
-
-### Bài tập 1 — Hồ sơ sinh viên
-
-**Kiến thức:** interface, optional, readonly.
-
-Tạo interface `Student` có:
-
-| Thuộc tính | Kiểu | Yêu cầu |
-| --- | --- | --- |
-| `id` | `number` | Chỉ đọc |
-| `name` | `string` | Bắt buộc |
-| `age` | `number` | Bắt buộc |
-| `email` | `string` | Tùy chọn |
 
 **Yêu cầu:**
 
-1. Tạo sinh viên thứ nhất có email.
-2. Tạo sinh viên thứ hai không có email.
-3. Viết hàm `printStudent(student: Student): void`.
-4. In tên và email; nếu thiếu email thì in `"Chưa có email"`.
-5. Thử sửa `id` để quan sát lỗi, sau đó comment dòng đó.
-
-**Dữ liệu gợi ý:**
-
-```text
-Sinh viên 1: id = 1, name = "Bao", age = 20,
-             email = "bao@example.com"
-
-Sinh viên 2: id = 2, name = "An", age = 19
-```
+1. Tạo hàm `formatUser` theo kiểu trên.
+2. Nếu có tuổi, trả về `"Bao - 20 tuổi"`.
+3. Nếu không có tuổi, chỉ trả về tên.
+4. Viết `printUser(name: string, age?: number): void`.
+5. `printUser` gọi `formatUser` và in kết quả.
 
 **Code khởi đầu:**
 
 ```typescript
-// TODO: Khai báo interface Student.
-// TODO: Tạo hai đối tượng.
+type FormatUser = (name: string, age?: number) => string;
 
-// TODO: Viết hàm printStudent.
-// TODO: Gọi hàm với từng sinh viên.
-```
-
----
-
-### Bài tập 2 — Nhân viên và mở rộng interface
-
-**Kiến thức:** extends.
-
-Tạo interface `Person` có:
-
-- `readonly id: number`.
-- `name: string`.
-
-Tạo interface `Employee extends Person`, bổ sung:
-
-- `department: string`.
-- `salary: number`.
-
-**Yêu cầu:**
-
-1. Tạo nhân viên tên `"Bao"`, phòng ban `"Engineering"`, lương `7000`.
-2. Viết hàm `getAnnualSalary(employee: Employee): number`.
-3. Hàm trả về lương tháng nhân `12`.
-4. In tên và lương năm.
-
-**Kết quả mong đợi:**
-
-```text
-Bao
-84000
-```
-
-**Code khởi đầu:**
-
-```typescript
-// TODO: Khai báo Person.
-// TODO: Khai báo Employee extends Person.
-// TODO: Tạo employee.
-
-
-// TODO: Viết getAnnualSalary.
-// TODO: In kết quả.
-```
-
----
-
-### Bài tập 3 — Hợp nhất interface
-
-**Kiến thức:** declaration merging.
-
-Khai báo interface `AppConfig` hai lần trong cùng file và cùng phạm vi:
-
-- Lần đầu: `appName: string`.
-- Lần sau: `version: string` và `debug?: boolean`.
-
-**Yêu cầu:**
-
-1. Tạo đối tượng `config` đáp ứng interface đã hợp nhất.
-2. Sử dụng `appName = "TS Core"` và `version = "1.0.0"`.
-3. In tên ứng dụng và phiên bản.
-4. Thử bỏ `version` để quan sát lỗi.
-5. Thử thêm một khai báo có `version: number` để quan sát xung đột, rồi comment lại.
-
-**Kết quả mong đợi:**
-
-```text
-TS Core
-1.0.0
-```
-
-**Câu cần giải thích:** Vì sao hai khai báo interface cùng tên này hợp lệ, nhưng hai type alias cùng tên thì không?
-
----
-
-### Bài tập 4 — Union cho mã và trạng thái đơn hàng
-
-**Kiến thức:** type alias, union, narrowing.
-
-Khai báo:
-
-```typescript
-type OrderId = number | string;
-type OrderStatus = "pending" | "paid" | "cancelled";
-```
-
-**Yêu cầu:**
-
-1. Viết hàm `formatOrderId(id: OrderId): string`.
-2. Nếu là số, trả về `"ORDER-"` ghép với số đó.
-3. Nếu là chuỗi, trả về chuỗi viết hoa.
-4. Tạo type `Order` có `readonly id: OrderId` và `status: OrderStatus`.
-5. Tạo một đơn hàng và đổi trạng thái từ `"pending"` sang `"paid"`.
-
-**Code khởi đầu:**
-
-```typescript
-type OrderId = number | string;
-type OrderStatus = "pending" | "paid" | "cancelled";
-
-function formatOrderId(id: OrderId): string {
-  // TODO: Kiểm tra typeof rồi xử lý.
+const formatUser: FormatUser = (name, age) => {
+  // TODO: Xử lý trường hợp có và không có tuổi.
   return "Chưa hoàn thành";
+};
+
+function printUser(name: string, age?: number): void {
+  // TODO: Gọi formatUser rồi in kết quả.
 }
 
-// TODO: Khai báo Order.
-// TODO: Tạo đơn hàng và cập nhật status.
-
-console.log(formatOrderId(12));       // ORDER-12
-console.log(formatOrderId("web-12")); // WEB-12
+printUser("Bao", 20); // Bao - 20 tuổi
+printUser("An");      // An
+printUser("Binh", 0); // Binh - 0 tuổi
 ```
 
-**Yêu cầu bổ sung:** Không dùng `any` hoặc `as` để bỏ qua kiểm tra kiểu.
+**Lưu ý:** Dùng `age !== undefined` để xử lý đúng số `0`.
 
 ---
 
-### Bài tập 5 — Intersection cho sản phẩm có tồn kho
+### Bài tập 3 — Lấy phần tử cuối của mảng
 
-**Kiến thức:** object type, intersection, readonly, optional.
+**Kiến thức:** generic, mảng, union với undefined.
 
-Khai báo:
+Viết hàm:
 
 ```typescript
-type Product = {
-  readonly id: number;
-  name: string;
-  price: number;
-};
-
-type Inventory = {
-  quantity: number;
-  warehouse?: string;
-};
-
-type StockProduct = Product & Inventory;
+function getLast<T>(items: T[]): T | undefined {
+  // TODO: Trả về phần tử cuối hoặc undefined.
+  return undefined;
+}
 ```
 
 **Yêu cầu:**
 
-1. Tạo `StockProduct` có tên `"Bàn phím"`, giá `350000`, số lượng `4`.
-2. Viết hàm `getStockValue(product: StockProduct): number`.
-3. Hàm trả về `price * quantity`.
-4. In tên sản phẩm và tổng giá trị tồn kho.
-5. In kho hàng, hoặc `"Chưa xác định"` nếu không có.
-6. Thử bỏ `quantity` để quan sát lỗi rồi bổ sung lại.
+1. Dùng được với mảng số và mảng chuỗi.
+2. Mảng rỗng trả về `undefined`.
+3. Không sử dụng `any` hoặc `as`.
+4. Kiểm tra kết quả khác `undefined` trước khi gọi phương thức riêng của kiểu đó.
 
-**Kết quả mong đợi khi không khai báo warehouse:**
+**Các trường hợp cần kiểm tra:**
 
-```text
-Bàn phím
-1400000
-Chưa xác định
+```typescript
+console.log(getLast([10, 20, 30])); // 30
+console.log(getLast(["Bao", "An"])); // An
+console.log(getLast<number>([]));   // undefined
 ```
 
-**Câu cần giải thích:** Vì sao `StockProduct` cần đáp ứng cả `Product` và `Inventory`?
+**Gợi ý:** Chỉ số cuối của mảng không rỗng là `items.length - 1`.
 
 ---
 
-## 8. Năm câu hỏi lý thuyết
+### Bài tập 4 — Tạo cặp dữ liệu
+
+**Kiến thức:** nhiều tham số kiểu, type alias generic, tuple.
+
+Khai báo:
+
+```typescript
+type Pair<T, U> = [T, U];
+```
+
+**Yêu cầu:**
+
+1. Viết hàm `makePair<T, U>(first: T, second: U): Pair<T, U>`.
+2. Trả về tuple chứa hai đối số theo đúng thứ tự.
+3. Thử với chuỗi và số.
+4. Thử với số và boolean.
+5. Dùng destructuring lấy từng giá trị.
+
+**Code khởi đầu:**
+
+```typescript
+type Pair<T, U> = [T, U];
+
+function makePair<T, U>(first: T, second: U): Pair<T, U> {
+  // TODO: Thay dòng dưới bằng return phù hợp.
+  throw new Error("Chưa hoàn thành");
+}
+
+// TODO: Gọi makePair("Bao", 20).
+// TODO: Gọi makePair(1, true).
+// TODO: Destructuring và in kết quả.
+```
+
+**Kết quả mong đợi:**
+
+```text
+["Bao", 20]
+[1, true]
+```
+
+---
+
+### Bài tập 5 — Đóng gói dữ liệu có độ dài
+
+**Kiến thức:** generic constraint, interface generic.
+
+Khai báo:
+
+```typescript
+interface LengthResult<T> {
+  value: T;
+  length: number;
+}
+```
+
+**Yêu cầu:**
+
+1. Viết hàm `inspectLength<T extends { length: number }>`.
+2. Nhận một giá trị có thuộc tính `length`.
+3. Trả về `LengthResult<T>`.
+4. Thuộc tính value chứa dữ liệu đầu vào.
+5. Thuộc tính length chứa độ dài của dữ liệu đó.
+6. Không sử dụng `any` hoặc ép kiểu.
+
+**Code khởi đầu:**
+
+```typescript
+interface LengthResult<T> {
+  value: T;
+  length: number;
+}
+
+function inspectLength<T extends { length: number }>(
+  value: T,
+): LengthResult<T> {
+  // TODO: Trả về object có value và length.
+  throw new Error("Chưa hoàn thành");
+}
+
+// TODO: Thử với "Hello".
+// TODO: Thử với [10, 20, 30].
+// TODO: Thử truyền 123 để quan sát lỗi, rồi comment lại.
+```
+
+**Kết quả mong đợi:**
+
+```text
+{ value: "Hello", length: 5 }
+{ value: [10, 20, 30], length: 3 }
+```
+
+**Tự kiểm tra thêm:** chuỗi rỗng và mảng rỗng đều có length bằng `0`.
+
+---
+
+## 14. Năm câu hỏi lý thuyết
 
 ### Câu 1
 
-Interface và type alias giống nhau và khác nhau ở đâu?
+Tham số tùy chọn và tham số mặc định khác nhau thế nào?
 
-Cách nào có thể trực tiếp đặt tên cho `number | string`?
+Với `quantity: number = 1`, truyền `undefined` và truyền `0` có kết quả khác nhau ra sao?
 
 ### Câu 2
 
-`email?: string` và `readonly id: number` có ý nghĩa gì?
+`void` và `never` khác nhau thế nào?
 
-`readonly` có tự làm toàn bộ object bất biến khi chạy không?
+Vì sao một hàm luôn ném lỗi có thể khai báo trả về `never` dù nó không chạy mãi mãi?
 
 ### Câu 3
 
-`extends` khác declaration merging như thế nào?
+So sánh hai hàm sau:
 
-Điều gì xảy ra nếu hai interface cùng tên khai báo một thuộc tính lần lượt là `number` và `string`?
+```typescript
+function first(value: any): any {
+  return value;
+}
+
+function second<T>(value: T): T {
+  return value;
+}
+```
+
+Hàm nào giữ được quan hệ kiểu giữa đầu vào và đầu ra? Có bắt buộc viết rõ tham số kiểu trong mọi lời gọi generic không?
 
 ### Câu 4
 
-`A | B` khác `A & B` như thế nào?
+`T extends { length: number }` có ý nghĩa gì?
 
-Với hai kiểu dưới đây, kiểu `C` cần những thuộc tính nào?
-
-```typescript
-type A = {
-  name: string;
-};
-
-type B = {
-  age: number;
-};
-
-type C = A & B;
-```
+Vì sao chuỗi và mảng đáp ứng ràng buộc này nhưng số `123` thì không?
 
 ### Câu 5
 
-Interface và type alias có tồn tại như đối tượng JavaScript khi chạy không?
+`<T, U>` cho phép điều gì so với chỉ dùng một tham số kiểu?
 
-Khai báo một biến theo interface có tự kiểm tra dữ liệu API hoặc xác nhận email hợp lệ không?
+T và U có bắt buộc khác kiểu nhau không? Với `new ValueBox<number>(10)`, có thể gọi `setValue("Hello")` không?
 
 ---
 
-## 9. Đáp án lý thuyết gợi ý
+## 15. Đáp án lý thuyết gợi ý
 
 <details>
 <summary>Mở sau khi tự trả lời</summary>
 
 ### Đáp án câu 1
 
-Cả hai đều có thể mô tả object và hàm.
+Tham số tùy chọn có thể bị bỏ qua và khi đó nhận `undefined`.
 
-Interface hỗ trợ `extends` và hợp nhất khai báo. Type alias đặt tên được cho nhiều dạng kiểu, bao gồm kiểu cơ bản, tuple và union.
+Tham số mặc định sử dụng giá trị đã khai báo khi đối số bị bỏ qua hoặc là `undefined`.
 
-Để đặt tên trực tiếp cho `number | string`, dùng:
+Với `quantity: number = 1`:
 
-```typescript
-type ID = number | string;
-```
+- Truyền `undefined` → quantity bằng `1`.
+- Truyền `0` → quantity bằng `0`.
 
 ### Đáp án câu 2
 
-- `email?: string`: có thể bỏ qua thuộc tính email.
-- `readonly id: number`: không được gán lại id thông qua kiểu đó.
+`void` biểu diễn việc không cung cấp kết quả hữu ích; hàm vẫn có thể kết thúc bình thường.
 
-`readonly` không tự đóng băng object lúc chạy và không tự khiến toàn bộ dữ liệu lồng bên trong trở thành chỉ đọc.
+`never` biểu diễn việc hàm không trả về bình thường.
+
+Ném lỗi chuyển luồng điều khiển sang cơ chế xử lý lỗi, nên hàm luôn ném lỗi có thể trả về `never`. Không cần phải chạy vô hạn.
 
 ### Đáp án câu 3
 
-`extends` tạo một interface mới dựa trên kiểu đã có.
+Hàm `second` giữ quan hệ kiểu qua T. Hàm `first` trả về any nên mất thông tin kiểu cụ thể.
 
-Declaration merging gộp các khai báo cùng tên thành một interface.
-
-Nếu cùng một thuộc tính dữ liệu được khai báo với kiểu `number` và `string`, TypeScript báo lỗi vì các khai báo không tương thích.
+Không phải lúc nào cũng cần viết rõ tham số kiểu. TypeScript thường suy luận được từ đối số và ngữ cảnh.
 
 ### Đáp án câu 4
 
-- `A | B`: giá trị đáp ứng ít nhất một kiểu.
-- `A & B`: giá trị đáp ứng đồng thời cả hai kiểu.
+Đây là ràng buộc yêu cầu T có thuộc tính length kiểu number.
 
-`C` cần cả `name: string` và `age: number`.
-
-```typescript
-const person: C = {
-  name: "Bao",
-  age: 20,
-};
-```
+Chuỗi và mảng có length. Số 123 không có thuộc tính phù hợp nên bị từ chối khi kiểm tra kiểu.
 
 ### Đáp án câu 5
 
-Interface và type alias không tồn tại như đối tượng JavaScript khi chạy. Các khai báo kiểu được xóa khi biên dịch.
+T và U cho phép mô tả hai vai trò kiểu độc lập, chẳng hạn phần tử đầu và phần tử sau của tuple.
 
-Chúng không tự xác thực dữ liệu API hoặc định dạng email. Muốn kiểm tra dữ liệu thực tế, cần viết logic xác thực khi chạy.
+Chúng không bắt buộc khác kiểu; cả hai đều có thể là string.
+
+Với `ValueBox<number>`, `setValue` yêu cầu number, nên truyền `"Hello"` sẽ sai kiểu.
 
 </details>
 
 ---
 
-## 10. Checklist ôn tập
+## 16. Checklist ôn tập
 
-- [ ] Tôi tạo được object theo interface.
-- [ ] Tôi biết xử lý thuộc tính tùy chọn.
-- [ ] Tôi phân biệt được const và readonly.
-- [ ] Tôi dùng được extends.
-- [ ] Tôi hiểu declaration merging.
-- [ ] Tôi tạo được object type bằng type alias.
-- [ ] Tôi phân biệt được union và intersection.
-- [ ] Tôi biết kết hợp interface với type.
-- [ ] Tôi hiểu kiểu dữ liệu không tự xác thực dữ liệu runtime.
+- [ ] Tôi khai báo được kiểu tham số và kiểu trả về.
+- [ ] Tôi dùng được tham số tùy chọn và mặc định.
+- [ ] Tôi dùng được rest parameter.
+- [ ] Tôi phân biệt được void và never.
+- [ ] Tôi mô tả được kiểu hàm bằng interface hoặc type.
+- [ ] Tôi hiểu callback là hàm được truyền vào hàm khác.
+- [ ] Tôi giải thích được vai trò của T trong generics.
+- [ ] Tôi biết khi nào TypeScript có thể suy luận tham số kiểu.
+- [ ] Tôi viết được generic với nhiều tham số kiểu.
+- [ ] Tôi dùng được extends để đặt ràng buộc.
+- [ ] Tôi hiểu generics trong interface, type alias và class.
 - [ ] Tôi hoàn thành 5 bài tập và trả lời 5 câu hỏi.
+
+> Học tiếp sau bài này: function overloads, keyof, generic constraints với keyof và utility types. Không cần học tất cả ngay trong bài đầu về generics.
