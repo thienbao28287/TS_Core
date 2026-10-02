@@ -1,653 +1,1036 @@
-# Bài 1 — Kiểu dữ liệu cơ bản trong TypeScript
+# Bài 2 — Interface và Type Alias trong TypeScript
 
 ## 1. Mục tiêu bài học
 
 Sau bài học, bạn có thể:
 
-- Khai báo các kiểu `number`, `string`, `boolean` và mảng.
-- Sử dụng tuple để nhóm các giá trị theo vị trí.
-- Sử dụng numeric enum và string enum.
-- Phân biệt `any` và `unknown`.
-- Kiểm tra kiểu bằng `typeof` trước khi xử lý dữ liệu.
+- Mô tả cấu trúc đối tượng bằng `interface` và `type`.
+- Sử dụng thuộc tính tùy chọn `?` và thuộc tính chỉ đọc `readonly`.
+- Mở rộng interface bằng `extends`.
+- Hiểu cơ chế hợp nhất khai báo interface.
+- Phân biệt union `|` và intersection `&`.
+- Lựa chọn `interface` hoặc `type` phù hợp.
 
-
-## 2. Khai báo kiểu và suy luận kiểu
-
-### 2.1. Khai báo kiểu
-
-Dùng dấu `:` sau tên biến để chỉ định kiểu dữ liệu.
-
-```typescript
-let age: number = 20;
-let fullName: string = "Pham Thien Bao";
-let isStudent: boolean = true;
-```
-
-### 2.2. Suy luận kiểu
-
-TypeScript có thể tự xác định kiểu từ giá trị ban đầu.
-
-```typescript
-let score = 8.5; // Được suy luận là number
-
-score = 9;
-
-// Lỗi: không thể gán string cho number.
-// score = "Chín";
-```
-
-> Không viết kiểu rõ ràng không đồng nghĩa với việc biến trở thành `any`.
-
-### 2.3. Lỗi kiểm tra kiểu và lỗi runtime
-
-- **Lỗi kiểm tra kiểu:** được TypeScript phát hiện khi phân tích code.
-- **Lỗi runtime:** xảy ra khi chương trình thực sự chạy.
-
-```typescript
-let age: number = 20;
-
-// TypeScript phát hiện lỗi kiểu:
-// age = "Hai mươi";
-
-const value: any = 123;
-
-// TypeScript cho phép, nhưng khi chạy sẽ xảy ra TypeError:
-// value.toUpperCase();
-```
-
-TypeScript không tự kiểm tra dữ liệu bên ngoài khi chạy. Chú thích kiểu được xóa khi biên dịch thành JavaScript.
+> Cách thực hành: chạy riêng từng ví dụ để tránh trùng tên khai báo. Nên bật `"strict": true` trong `tsconfig.json`.
 
 ---
 
-## 3. Kiểu dữ liệu cơ bản
+## 2. Interface
 
-### 3.1. Number
+### 2.1. Định nghĩa
 
-`number` biểu diễn số nguyên và số thập phân.
+`interface` mô tả cấu trúc mà một giá trị phải đáp ứng.
 
-```typescript
-const age: number = 20;
-const price: number = 150000;
-const averageScore: number = 8.5;
+Với đối tượng, interface thường quy định:
 
-console.log(age);
-console.log(price);
-console.log(averageScore);
+- Tên thuộc tính.
+- Kiểu dữ liệu của thuộc tính.
+- Thuộc tính bắt buộc hoặc tùy chọn.
+- Thuộc tính chỉ đọc.
+- Các phương thức.
 
-// Sai kiểu:
-// const quantity: number = "10";
-```
+Interface không tự tạo ra đối tượng hoặc giá trị mặc định.
 
-### 3.2. String
-
-`string` biểu diễn chuỗi ký tự.
+### 2.2. Ví dụ cơ bản
 
 ```typescript
-const fullName: string = "Pham Thien Bao";
-const courseName: string = "TypeScript";
+interface User {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
 
-const introduction: string =
-  `Xin chào ${fullName}, chào mừng đến với ${courseName}!`;
+const user: User = {
+  id: 1,
+  name: "Bao",
+  isActive: true,
+};
 
-console.log(introduction);
+console.log(user.name);     // Bao
+console.log(user.isActive); // true
 ```
 
-### 3.3. Boolean
-
-`boolean` chỉ có hai giá trị: `true` và `false`.
+Đối tượng `user` phải đáp ứng cấu trúc của `User`.
 
 ```typescript
-const isStudent: boolean = true;
-const isCompleted: boolean = false;
+interface User {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
 
-const score: number = 8;
-const isPassed: boolean = score >= 5;
+// Lỗi: thiếu thuộc tính isActive.
+// const user: User = {
+//   id: 1,
+//   name: "Bao",
+// };
 
-console.log(isStudent);  // true
-console.log(isCompleted); // false
-console.log(isPassed);   // true
+// Lỗi: id phải là number.
+// const anotherUser: User = {
+//   id: "1",
+//   name: "An",
+//   isActive: true,
+// };
 ```
-
-> Dùng `number`, `string`, `boolean` viết thường khi khai báo các kiểu này.
-
-### 3.4. Mảng — Array
-
-Mảng chứa nhiều phần tử. Có hai cách khai báo thường gặp:
-
-```typescript
-const scores: number[] = [7, 8, 9];
-const names: Array<string> = ["Bao", "An", "Binh"];
-const results: boolean[] = [true, false, true];
-
-scores.push(10);
-names.push("Linh");
-
-console.log(scores); // [7, 8, 9, 10]
-console.log(names);  // ["Bao", "An", "Binh", "Linh"]
-console.log(results.length); // 3
-
-// Sai kiểu:
-// scores.push("10");
-```
-
-`number[]` và `Array<number>` đều mô tả mảng số.
-
-> `const` ngăn gán lại biến, nhưng không tự ngăn sửa phần tử hoặc gọi `push()` trên mảng.
 
 ---
 
-## 4. Tuple
+### 2.3. Thuộc tính tùy chọn — Optional property
 
-Tuple là kiểu mô tả số lượng phần tử và kiểu dữ liệu tại từng vị trí của một mảng.
-
-Ví dụ `[string, number]` mô tả hai phần tử:
-
-- Vị trí `0`: `string`.
-- Vị trí `1`: `number`.
-
-### 4.1. Đặc điểm
-
-- Mỗi vị trí có kiểu dữ liệu xác định.
-- Thứ tự phần tử quan trọng.
-- Có thể nhóm các giá trị liên quan nhưng khác kiểu.
-- Có thể dùng làm kiểu trả về của hàm.
-
-### 4.2. Ví dụ
+Dùng `?` để cho phép một thuộc tính được bỏ qua.
 
 ```typescript
-let person: [string, number];
-
-person = ["Pham Thien Bao", 20];
-
-console.log(person[0]); // Pham Thien Bao
-console.log(person[1]); // 20
-
-// Sai thứ tự kiểu:
-// person = [20, "Pham Thien Bao"];
-
-// Thiếu phần tử:
-// person = ["Pham Thien Bao"];
-
-// Thừa phần tử:
-// person = ["Pham Thien Bao", 20, true];
-```
-
-### 4.3. Tuple với hàm
-
-```typescript
-function getUser(): [string, number] {
-  return ["Bao", 20];
+interface User {
+  id: number;
+  name: string;
+  email?: string;
 }
 
-const [userName, age] = getUser();
+const userWithoutEmail: User = {
+  id: 1,
+  name: "Bao",
+};
 
-console.log(userName); // Bao
-console.log(age);      // 20
+const userWithEmail: User = {
+  id: 2,
+  name: "An",
+  email: "an@example.com",
+};
+
+console.log(userWithoutEmail.email); // undefined
+console.log(userWithEmail.email);    // an@example.com
 ```
 
-Cú pháp `[userName, age]` được gọi là **destructuring**: lấy phần tử theo vị trí và gán vào biến.
-
-### 4.4. Phân biệt mảng và tuple
-
-| Tiêu chí | Mảng `number[]` | Tuple `[string, number]` |
-| --- | --- | --- |
-| Kiểu dữ liệu | Các phần tử đều là số | Vị trí đầu là chuỗi, vị trí sau là số |
-| Số lượng | Không quy định cụ thể | Dạng này quy định hai phần tử |
-| Trường hợp sử dụng | Danh sách điểm | Cặp tên và tuổi |
-
-### 4.5. Lưu ý về độ dài và readonly
-
-Tuple vẫn là mảng JavaScript khi chạy. Tuple có thể thay đổi vẫn cho phép một số thao tác như `push()`:
+Khi bật kiểm tra null nghiêm ngặt, đọc `email` cho kết quả có kiểu `string | undefined`. Cần kiểm tra trước khi dùng phương thức chuỗi.
 
 ```typescript
-const person: [string, number] = ["Bao", 20];
-
-person.push(21);
-
-console.log(person.length); // Khi chạy: 3
-```
-
-Có thể dùng `readonly` để ngăn thay đổi thông qua biến đó khi kiểm tra kiểu:
-
-```typescript
-const person: readonly [string, number] = ["Bao", 20];
-
-// Lỗi kiểu:
-// person.push(21);
-// person[1] = 22;
-```
-
-> `readonly` không tự đóng băng dữ liệu lúc chạy. Tuple còn có phần tử tùy chọn và rest, sẽ học ở phần sau.
-
----
-
-## 5. Enum
-
-Enum, viết tắt của **enumeration**, định nghĩa một tập hợp các giá trị có tên.
-
-Ví dụ sử dụng:
-
-- Hướng di chuyển.
-- Vai trò người dùng.
-- Trạng thái đơn hàng.
-
-### 5.1. Numeric enum
-
-Nếu không chỉ định giá trị, phần tử đầu tiên bắt đầu từ `0`, các phần tử tiếp theo tăng thêm `1`.
-
-```typescript
-enum Direction {
-  Up,
-  Down,
-  Left,
-  Right,
+interface User {
+  id: number;
+  name: string;
+  email?: string;
 }
 
-console.log(Direction.Up);    // 0
-console.log(Direction.Down);  // 1
-console.log(Direction.Left);  // 2
-console.log(Direction.Right); // 3
-```
-
-Numeric enum có ánh xạ ngược: tra tên thành viên từ giá trị số.
-
-```typescript
-console.log(Direction[0]); // "Up"
-console.log(Direction[3]); // "Right"
-```
-
-Có thể đặt giá trị khởi đầu:
-
-```typescript
-enum Level {
-  Beginner = 1,
-  Intermediate,
-  Advanced,
-}
-
-console.log(Level.Beginner);     // 1
-console.log(Level.Intermediate); // 2
-console.log(Level.Advanced);     // 3
-```
-
-### 5.2. String enum
-
-String enum sử dụng giá trị chuỗi.
-
-```typescript
-enum TextDirection {
-  Up = "UP",
-  Down = "DOWN",
-  Left = "LEFT",
-  Right = "RIGHT",
-}
-
-const currentDirection: TextDirection = TextDirection.Up;
-
-console.log(currentDirection); // "UP"
-console.log(TextDirection.Left); // "LEFT"
-```
-
-> String enum không tự tạo ánh xạ ngược từ giá trị sang tên thành viên.
-
-### 5.3. Enum hỗn hợp
-
-Enum hỗn hợp chứa cả số và chuỗi.
-
-```typescript
-enum ResponseStatus {
-  Success = 200,
-  NotFound = "NOT_FOUND",
-  Error = 500,
-}
-
-console.log(ResponseStatus.Success);  // 200
-console.log(ResponseStatus.NotFound); // "NOT_FOUND"
-console.log(ResponseStatus.Error);    // 500
-```
-
-Nên ưu tiên enum có kiểu giá trị nhất quán để dễ đọc và xử lý.
-
----
-
-## 6. Any
-
-`any` cho phép biến nhận giá trị thuộc bất kỳ kiểu dữ liệu nào.
-
-```typescript
-let dynamicVar: any;
-
-dynamicVar = "Hello";
-console.log(dynamicVar); // Hello
-
-dynamicVar = true;
-console.log(dynamicVar); // true
-
-dynamicVar = 123;
-console.log(dynamicVar); // 123
-```
-
-### Đặc điểm
-
-- Có thể nhận nhiều kiểu giá trị.
-- Bỏ qua nhiều kiểm tra kiểu đối với giá trị đó.
-- Có thể che giấu lỗi và khiến lỗi xuất hiện khi chạy.
-
-```typescript
-const data: any = 100;
-
-// TypeScript không báo lỗi kiểu cho lời gọi này.
-// Nếu bỏ comment và chạy, chương trình sẽ gặp TypeError:
-// console.log(data.toUpperCase());
-```
-
-> Hạn chế `any`. Nếu biết kiểu dữ liệu, hãy khai báo kiểu đó.
-
----
-
-## 7. Unknown
-
-`unknown` cũng nhận được mọi kiểu giá trị, nhưng yêu cầu xác định kiểu trước các thao tác đặc thù.
-
-### 7.1. Ví dụ cơ bản
-
-```typescript
-let input: unknown;
-
-input = "Hello";
-
-// Không được gọi trực tiếp khi chưa xác định là chuỗi:
-// console.log(input.toUpperCase());
-
-if (typeof input === "string") {
-  console.log(input.toUpperCase()); // HELLO
-}
-```
-
-Kiểm tra `typeof` giúp TypeScript thu hẹp kiểu, gọi là **narrowing**.
-
-### 7.2. Xử lý nhiều kiểu
-
-```typescript
-function printValue(value: unknown): void {
-  if (typeof value === "string") {
-    console.log(value.toUpperCase());
-  } else if (typeof value === "number") {
-    console.log(value * 2);
-  } else if (typeof value === "boolean") {
-    console.log(value ? "Đúng" : "Sai");
+function printEmail(user: User): void {
+  if (user.email !== undefined) {
+    console.log(user.email.toLowerCase());
   } else {
-    console.log("Chưa hỗ trợ kiểu dữ liệu này");
+    console.log("Chưa có email");
   }
 }
 
-printValue("hello"); // HELLO
-printValue(10);      // 20
-printValue(true);    // Đúng
-printValue(null);    // Chưa hỗ trợ kiểu dữ liệu này
+printEmail({ id: 1, name: "Bao" });
+// Chưa có email
+
+printEmail({
+  id: 2,
+  name: "An",
+  email: "AN@EXAMPLE.COM",
+});
+// an@example.com
 ```
 
-`void` cho biết hàm không trả về giá trị hữu ích.
-
-### 7.3. So sánh any và unknown
-
-| Tiêu chí | `any` | `unknown` |
-| --- | --- | --- |
-| Nhận mọi kiểu giá trị | Có | Có |
-| Gọi trực tiếp phương thức chuỗi | Được trình kiểm tra kiểu cho phép | Cần xác định là chuỗi |
-| Khả năng phát hiện thao tác sai kiểu | Hạn chế | Tốt hơn khi thu hẹp kiểu đúng |
-| Dữ liệu chưa biết kiểu | Dễ bỏ sót lỗi | Nên ưu tiên và kiểm tra trước khi xử lý |
-
-Có thể in giá trị `unknown` trực tiếp:
-
-```typescript
-const value: unknown = 123;
-console.log(value); // Hợp lệ
-```
-
-> `as string` không thay thế việc kiểm tra dữ liệu. Nó không xác thực hoặc chuyển đổi dữ liệu lúc chạy.
+> Thuộc tính tùy chọn không có nghĩa là có giá trị mặc định.
 
 ---
 
-## 8. Năm bài tập thực hành
+### 2.4. Thuộc tính chỉ đọc — Readonly
 
-### Bài tập 1 — Thông tin học viên
-
-**Kiến thức:** `string`, `number`, `boolean`, mảng.
-
-Khai báo:
-
-- `fullName`: tên học viên.
-- `age`: tuổi.
-- `scores`: mảng điểm `[7, 8, 9]`.
-
-**Yêu cầu:**
-
-1. Khai báo kiểu dữ liệu phù hợp.
-2. Tính điểm trung bình bằng vòng lặp.
-3. Tạo biến `isPassed: boolean`, nhận `true` khi trung bình từ `5` trở lên.
-4. In thông tin và kết quả.
-
-**Code khởi đầu:**
+Dùng `readonly` để ngăn gán lại thuộc tính qua kiểu đã khai báo.
 
 ```typescript
-const fullName: string = "Pham Thien Bao";
-const age: number = 20;
-const scores: number[] = [7, 8, 9];
-
-// TODO: Tính tổng điểm.
-// TODO: Tính điểm trung bình.
-// TODO: Khai báo isPassed.
-// TODO: In kết quả.
-```
-
-**Kết quả mong đợi:**
-
-- Điểm trung bình: `8`.
-- `isPassed`: `true`.
-
-Giả sử mảng điểm luôn có ít nhất một phần tử.
-
----
-
-### Bài tập 2 — Tuple với hàm
-
-**Kiến thức:** tuple, hàm, destructuring.
-
-Viết hàm `getProduct()` trả về tuple gồm:
-
-- Tên sản phẩm: `string`.
-- Giá sản phẩm: `number`.
-- Còn hàng: `boolean`.
-
-**Yêu cầu:**
-
-1. Trả về `["Laptop", 20000000, true]`.
-2. Dùng destructuring lấy `productName`, `price`, `inStock`.
-3. In các giá trị.
-4. Thử đảo thứ tự tên và giá để quan sát lỗi, sau đó sửa lại.
-
-**Code khởi đầu:**
-
-```typescript
-function getProduct(): [string, number, boolean] {
-  // TODO: Thay dòng dưới bằng return đúng yêu cầu.
-  throw new Error("Chưa hoàn thành");
+interface User {
+  readonly id: number;
+  name: string;
 }
 
-// TODO: Gọi hàm và destructuring.
-// TODO: In kết quả.
+const user: User = {
+  id: 1,
+  name: "Bao",
+};
+
+user.name = "Thien Bao"; // Hợp lệ
+
+// Lỗi kiểm tra kiểu:
+// user.id = 2;
+
+console.log(user.name); // Thien Bao
 ```
 
-**Yêu cầu bổ sung:** Không sử dụng `any`.
+#### Phân biệt const và readonly
+
+| Cách dùng | Ý nghĩa |
+| --- | --- |
+| `const user = ...` | Không được gán lại biến `user` |
+| `readonly id: number` | Không được gán lại thuộc tính `id` thông qua kiểu đó |
+
+`readonly` không tự làm toàn bộ dữ liệu bên trong bất biến:
+
+```typescript
+interface Team {
+  readonly members: string[];
+}
+
+const team: Team = {
+  members: ["Bao"],
+};
+
+team.members.push("An"); // Hợp lệ
+
+// Không được thay cả mảng:
+// team.members = ["Binh"];
+```
+
+Muốn ngăn sửa phần tử qua thuộc tính này, dùng mảng chỉ đọc:
+
+```typescript
+interface Team {
+  readonly members: readonly string[];
+}
+
+const team: Team = {
+  members: ["Bao"],
+};
+
+// Lỗi kiểm tra kiểu:
+// team.members.push("An");
+```
+
+> `readonly` là ràng buộc kiểm tra kiểu; không tự đóng băng đối tượng JavaScript khi chạy.
 
 ---
 
-### Bài tập 3 — Numeric enum và string enum
+### 2.5. Mở rộng interface — Extends
 
-**Kiến thức:** enum và ánh xạ ngược.
+Dùng `extends` để tạo interface mới dựa trên cấu trúc đã có.
+
+```typescript
+interface User {
+  readonly id: number;
+  name: string;
+  isActive: boolean;
+  email?: string;
+}
+
+interface Employee extends User {
+  department: string;
+  salary: number;
+}
+
+const employee: Employee = {
+  id: 5,
+  name: "Bao",
+  isActive: true,
+  email: "bao@example.com",
+  department: "Engineering",
+  salary: 7000,
+};
+
+console.log(employee.name);       // Bao
+console.log(employee.department); // Engineering
+console.log(employee.salary);     // 7000
+```
+
+`Employee` bao gồm thuộc tính từ `User` và các thuộc tính khai báo thêm.
+
+Có thể mở rộng nhiều interface nếu các thành viên tương thích:
+
+```typescript
+interface Named {
+  name: string;
+}
+
+interface Contactable {
+  email: string;
+}
+
+interface Employee extends Named, Contactable {
+  salary: number;
+}
+
+const employee: Employee = {
+  name: "Bao",
+  email: "bao@example.com",
+  salary: 7000,
+};
+
+console.log(employee);
+```
+
+---
+
+### 2.6. Hợp nhất khai báo — Declaration merging
+
+Các khai báo interface cùng tên trong cùng phạm vi có thể hợp nhất.
+
+```typescript
+interface Employee {
+  name: string;
+}
+
+interface Employee {
+  department: string;
+}
+
+const employee: Employee = {
+  name: "Bao",
+  department: "Engineering",
+};
+
+console.log(employee.name);
+console.log(employee.department);
+```
+
+Interface `Employee` sau khi hợp nhất yêu cầu cả `name` và `department`.
+
+#### Điều kiện cần chú ý
+
+Các thuộc tính dữ liệu trùng tên phải có kiểu và modifier tương thích.
+
+```typescript
+interface Profile {
+  id: number;
+}
+
+// Nếu bỏ comment, sẽ có lỗi vì id được khai báo khác kiểu:
+// interface Profile {
+//   id: string;
+// }
+```
+
+Merging không ghi đè kiểu của thuộc tính đã có.
+
+#### Ví dụ kết hợp extends và merging
+
+```typescript
+interface User {
+  readonly id: number;
+  name: string;
+  isActive: boolean;
+  email?: string;
+}
+
+interface Employee {
+  department: string;
+}
+
+interface Employee extends User {
+  salary: number;
+}
+
+const employee: Employee = {
+  id: 5,
+  name: "Bao",
+  isActive: true,
+  email: "bao@example.com",
+  salary: 7000,
+  department: "Engineering",
+};
+
+console.log(employee);
+```
+
+Cấu trúc cuối cùng của `Employee` gồm:
+
+- `id`, `name`, `isActive`, `email?` từ `User`.
+- `department` từ khai báo đầu.
+- `salary` từ khai báo thứ hai.
+
+> Trong code thông thường, nếu không có nhu cầu merging, gom các thuộc tính vào một khai báo sẽ dễ theo dõi hơn.
+
+---
+
+### 2.7. Interface có phương thức
+
+```typescript
+interface Greeter {
+  name: string;
+  greet(): string;
+}
+
+const greeter: Greeter = {
+  name: "Bao",
+
+  greet() {
+    return `Xin chào, tôi là ${this.name}`;
+  },
+};
+
+console.log(greeter.greet());
+// Xin chào, tôi là Bao
+```
+
+`greet(): string` mô tả phương thức không nhận tham số và trả về chuỗi.
+
+### 2.8. Interface mô tả hàm
+
+```typescript
+interface AddFunction {
+  (a: number, b: number): number;
+}
+
+const add: AddFunction = (a, b) => a + b;
+
+console.log(add(3, 5)); // 8
+```
+
+Cú pháp bên trong `AddFunction` là chữ ký gọi hàm.
+
+Với class, có thể dùng `implements` để yêu cầu class đáp ứng cấu trúc interface. Phần triển khai class sẽ học kỹ ở bài OOP.
+
+---
+
+## 3. Type Alias
+
+### 3.1. Định nghĩa
+
+Type alias dùng từ khóa `type` để đặt tên cho một kiểu.
+
+Có thể đặt tên cho:
+
+- Kiểu cơ bản.
+- Object.
+- Mảng và tuple.
+- Hàm.
+- Union.
+- Intersection.
+
+### 3.2. Đặt tên cho kiểu cơ bản
+
+```typescript
+type UserName = string;
+type Age = number;
+
+const userName: UserName = "Bao";
+const age: Age = 20;
+
+console.log(userName);
+console.log(age);
+```
+
+`UserName` vẫn là bí danh của `string`; không trở thành kiểu riêng biệt với mọi chuỗi khác.
+
+---
+
+### 3.3. Type alias cho object
+
+```typescript
+type UserProfile = {
+  readonly id: number;
+  name: string;
+  isActive: boolean;
+  email?: string;
+};
+
+const user: UserProfile = {
+  id: 1,
+  name: "Bao",
+  isActive: true,
+};
+
+user.name = "Thien Bao"; // Hợp lệ
+
+// Lỗi:
+// user.id = 2;
+
+console.log(user);
+```
+
+Object type được đặt tên bằng `type` cũng hỗ trợ `?` và `readonly`.
+
+---
+
+### 3.4. Union type — Dấu |
+
+Union cho phép giá trị thuộc ít nhất một trong các kiểu thành phần.
+
+```typescript
+type ID = number | string;
+
+let userId: ID = 1;
+userId = "USER-001";
+
+// Lỗi:
+// userId = true;
+```
+
+Cách đọc:
+
+```text
+number | string
+```
+
+Là: **số hoặc chuỗi**.
+
+Muốn thực hiện thao tác riêng của một kiểu, cần thu hẹp kiểu trước:
+
+```typescript
+type ID = number | string;
+
+function formatId(id: ID): string {
+  if (typeof id === "string") {
+    return id.toUpperCase();
+  }
+
+  return `ID-${id}`;
+}
+
+console.log(formatId("user-001")); // USER-001
+console.log(formatId(5));          // ID-5
+```
+
+Có thể dùng union với các giá trị chuỗi cụ thể:
+
+```typescript
+type OrderStatus = "pending" | "paid" | "cancelled";
+
+let orderStatus: OrderStatus = "pending";
+orderStatus = "paid";
+
+// Lỗi: không thuộc các giá trị cho phép.
+// orderStatus = "shipping";
+```
+
+---
+
+### 3.5. Intersection type — Dấu &
+
+Intersection yêu cầu giá trị đáp ứng đồng thời tất cả các kiểu thành phần.
+
+```typescript
+type Person = {
+  name: string;
+  age: number;
+};
+
+type Contact = {
+  email: string;
+};
+
+type ContactPerson = Person & Contact;
+
+const person: ContactPerson = {
+  name: "Bao",
+  age: 20,
+  email: "bao@example.com",
+};
+
+console.log(person);
+```
+
+Cách đọc:
+
+```text
+Person & Contact
+```
+
+Là: **vừa đáp ứng Person, vừa đáp ứng Contact**.
+
+#### Union và intersection
+
+| Kiểu | Ý nghĩa |
+| --- | --- |
+| `A | B` | Đáp ứng ít nhất một trong hai kiểu |
+| `A & B` | Đáp ứng đồng thời cả hai kiểu |
+
+#### Intersection không ghi đè thuộc tính
+
+```typescript
+type NumericId = {
+  id: number;
+};
+
+type TextId = {
+  id: string;
+};
+
+type ConflictingId = NumericId & TextId;
+```
+
+`ConflictingId.id` phải đồng thời là `number` và `string`, nên có kiểu `never`: không có giá trị hợp lệ đáp ứng yêu cầu này.
+
+```typescript
+// Đều không hợp lệ:
+// const first: ConflictingId = { id: 1 };
+// const second: ConflictingId = { id: "1" };
+```
+
+> Dấu `&` kết hợp yêu cầu về kiểu; không hoạt động như thao tác ghi đè thuộc tính của object.
+
+---
+
+### 3.6. Type alias cho tuple và hàm
+
+```typescript
+type ProductTuple = [string, number];
+
+const product: ProductTuple = ["Laptop", 20000000];
+
+console.log(product[0]); // Laptop
+console.log(product[1]); // 20000000
+```
+
+```typescript
+type CalculateTotal = (price: number, quantity: number) => number;
+
+const calculateTotal: CalculateTotal = (price, quantity) => {
+  return price * quantity;
+};
+
+console.log(calculateTotal(100000, 3)); // 300000
+```
+
+---
+
+## 4. Kết hợp interface và type alias
+
+Có thể dùng cả hai trong cùng chương trình.
+
+### 4.1. Interface sử dụng type alias
+
+```typescript
+type ID = number | string;
+type UserRole = "admin" | "member";
+
+interface User {
+  readonly id: ID;
+  name: string;
+  role: UserRole;
+}
+
+const user: User = {
+  id: "USER-001",
+  name: "Bao",
+  role: "admin",
+};
+
+console.log(user);
+```
+
+### 4.2. Dùng interface trong intersection
+
+```typescript
+interface User {
+  id: number;
+  name: string;
+}
+
+type Employee = User & {
+  department: string;
+  salary: number;
+};
+
+const employee: Employee = {
+  id: 1,
+  name: "Bao",
+  department: "Engineering",
+  salary: 7000,
+};
+
+console.log(employee);
+```
+
+### 4.3. Interface mở rộng object type alias
+
+```typescript
+type Person = {
+  name: string;
+};
+
+interface Employee extends Person {
+  salary: number;
+}
+
+const employee: Employee = {
+  name: "Bao",
+  salary: 7000,
+};
+
+console.log(employee);
+```
+
+Interface có thể mở rộng object type phù hợp có các thành viên xác định. Không thể trực tiếp `extends` một union như `string | number`.
+
+---
+
+## 5. So sánh interface và type alias
+
+| Tiêu chí | Interface | Type alias |
+| --- | --- | --- |
+| Từ khóa | `interface` | `type` |
+| Mô tả object | Có | Có |
+| Thuộc tính `?`, `readonly` | Có | Có, trong object type |
+| Mô tả hàm | Có, qua chữ ký gọi | Có, qua function type |
+| Đặt tên cho kiểu cơ bản | Không trực tiếp | Có |
+| Đặt tên trực tiếp cho union | Không | Có |
+| Mở rộng hoặc kết hợp cấu trúc | `extends` | `&` |
+| Hợp nhất khai báo cùng tên | Có, khi hợp lệ | Không |
+| Tồn tại như giá trị lúc runtime | Không | Không |
+| Tự xác thực dữ liệu API | Không | Không |
+
+### Lưu ý về type alias trùng tên
+
+```typescript
+type User = {
+  name: string;
+};
+
+// Lỗi khai báo trùng tên:
+// type User = {
+//   age: number;
+// };
+```
+
+Muốn kết hợp, tạo một kiểu mới:
+
+```typescript
+type User = {
+  name: string;
+};
+
+type UserWithAge = User & {
+  age: number;
+};
+
+const user: UserWithAge = {
+  name: "Bao",
+  age: 20,
+};
+```
+
+---
+
+## 6. Khi nào dùng interface, khi nào dùng type?
+
+### Ưu tiên interface khi
+
+- Mô tả cấu trúc object.
+- Muốn thể hiện quan hệ mở rộng bằng `extends`.
+- Cần declaration merging.
+
+### Ưu tiên type khi
+
+- Đặt tên cho union, tuple hoặc kiểu cơ bản.
+- Kết hợp các kiểu bằng intersection.
+- Muốn viết kiểu hàm theo cú pháp `(thamSố) => kiểuTrảVề`.
+
+Với object thông thường, cả hai đều dùng được. Chọn theo nhu cầu và giữ cách viết nhất quán trong dự án.
+
+### Lưu ý về runtime
+
+`interface` và `type` phục vụ kiểm tra kiểu, không tự kiểm tra giá trị từ API hay dữ liệu người dùng.
+
+Ví dụ, khai báo `email: string` không tự xác nhận chuỗi đó là địa chỉ email hợp lệ. Việc xác thực dữ liệu cần code xử lý khi chạy.
+
+---
+
+## 7. Năm bài tập thực hành
+
+### Bài tập 1 — Hồ sơ sinh viên
+
+**Kiến thức:** interface, optional, readonly.
+
+Tạo interface `Student` có:
+
+| Thuộc tính | Kiểu | Yêu cầu |
+| --- | --- | --- |
+| `id` | `number` | Chỉ đọc |
+| `name` | `string` | Bắt buộc |
+| `age` | `number` | Bắt buộc |
+| `email` | `string` | Tùy chọn |
 
 **Yêu cầu:**
 
-1. Tạo numeric enum `Role` gồm `Admin`, `User`, `Guest`.
-2. In `Role.Admin`.
-3. In tên thành viên có giá trị `0`.
-4. Tạo string enum `OrderStatus`:
-   - `Pending = "PENDING"`.
-   - `Paid = "PAID"`.
-   - `Cancelled = "CANCELLED"`.
-5. Khai báo biến `orderStatus` có kiểu `OrderStatus`, gán `OrderStatus.Paid` và in ra.
+1. Tạo sinh viên thứ nhất có email.
+2. Tạo sinh viên thứ hai không có email.
+3. Viết hàm `printStudent(student: Student): void`.
+4. In tên và email; nếu thiếu email thì in `"Chưa có email"`.
+5. Thử sửa `id` để quan sát lỗi, sau đó comment dòng đó.
+
+**Dữ liệu gợi ý:**
+
+```text
+Sinh viên 1: id = 1, name = "Bao", age = 20,
+             email = "bao@example.com"
+
+Sinh viên 2: id = 2, name = "An", age = 19
+```
+
+**Code khởi đầu:**
+
+```typescript
+// TODO: Khai báo interface Student.
+// TODO: Tạo hai đối tượng.
+
+// TODO: Viết hàm printStudent.
+// TODO: Gọi hàm với từng sinh viên.
+```
+
+---
+
+### Bài tập 2 — Nhân viên và mở rộng interface
+
+**Kiến thức:** extends.
+
+Tạo interface `Person` có:
+
+- `readonly id: number`.
+- `name: string`.
+
+Tạo interface `Employee extends Person`, bổ sung:
+
+- `department: string`.
+- `salary: number`.
+
+**Yêu cầu:**
+
+1. Tạo nhân viên tên `"Bao"`, phòng ban `"Engineering"`, lương `7000`.
+2. Viết hàm `getAnnualSalary(employee: Employee): number`.
+3. Hàm trả về lương tháng nhân `12`.
+4. In tên và lương năm.
 
 **Kết quả mong đợi:**
 
 ```text
-0
-Admin
-PAID
+Bao
+84000
+```
+
+**Code khởi đầu:**
+
+```typescript
+// TODO: Khai báo Person.
+// TODO: Khai báo Employee extends Person.
+// TODO: Tạo employee.
+
+
+// TODO: Viết getAnnualSalary.
+// TODO: In kết quả.
 ```
 
 ---
 
-### Bài tập 4 — Quan sát any
+### Bài tập 3 — Hợp nhất interface
 
-**Kiến thức:** `any`, lỗi runtime.
+**Kiến thức:** declaration merging.
+
+Khai báo interface `AppConfig` hai lần trong cùng file và cùng phạm vi:
+
+- Lần đầu: `appName: string`.
+- Lần sau: `version: string` và `debug?: boolean`.
 
 **Yêu cầu:**
 
-1. Tạo biến `data: any`.
-2. Lần lượt gán `"Hello TypeScript"`, `100`, `true`.
-3. In giá trị sau mỗi lần gán.
-4. Gán lại `100` rồi thử gọi `data.toUpperCase()`.
-5. Ghi nhận sự khác nhau giữa kiểm tra kiểu và kết quả khi chạy.
-6. Comment dòng gây lỗi sau khi quan sát.
+1. Tạo đối tượng `config` đáp ứng interface đã hợp nhất.
+2. Sử dụng `appName = "TS Core"` và `version = "1.0.0"`.
+3. In tên ứng dụng và phiên bản.
+4. Thử bỏ `version` để quan sát lỗi.
+5. Thử thêm một khai báo có `version: number` để quan sát xung đột, rồi comment lại.
 
-**Code khởi đầu:**
+**Kết quả mong đợi:**
 
-```typescript
-let data: any;
-
-// TODO: Gán chuỗi và in.
-// TODO: Gán số và in.
-// TODO: Gán boolean và in.
-
-// TODO: Thử thao tác sai khi data là số.
+```text
+TS Core
+1.0.0
 ```
 
-**Câu cần giải thích:** Vì sao code có thể vượt qua kiểm tra kiểu nhưng vẫn gặp lỗi runtime?
+**Câu cần giải thích:** Vì sao hai khai báo interface cùng tên này hợp lệ, nhưng hai type alias cùng tên thì không?
 
 ---
 
-### Bài tập 5 — Xử lý unknown
+### Bài tập 4 — Union cho mã và trạng thái đơn hàng
 
-**Kiến thức:** `unknown`, `typeof`, điều kiện.
+**Kiến thức:** type alias, union, narrowing.
 
-Viết hàm `processInput(value: unknown): string`.
+Khai báo:
 
-**Quy tắc xử lý:**
+```typescript
+type OrderId = number | string;
+type OrderStatus = "pending" | "paid" | "cancelled";
+```
 
-| Đầu vào | Kết quả |
-| --- | --- |
-| Chuỗi | Bỏ khoảng trắng hai đầu và chuyển thành chữ hoa |
-| Số | Nhân đôi rồi chuyển kết quả thành chuỗi |
-| Boolean | `true` trả về `"Đúng"`, `false` trả về `"Sai"` |
-| Kiểu khác | Trả về `"Không hỗ trợ"` |
+**Yêu cầu:**
+
+1. Viết hàm `formatOrderId(id: OrderId): string`.
+2. Nếu là số, trả về `"ORDER-"` ghép với số đó.
+3. Nếu là chuỗi, trả về chuỗi viết hoa.
+4. Tạo type `Order` có `readonly id: OrderId` và `status: OrderStatus`.
+5. Tạo một đơn hàng và đổi trạng thái từ `"pending"` sang `"paid"`.
 
 **Code khởi đầu:**
 
 ```typescript
-function processInput(value: unknown): string {
-  // TODO: Kiểm tra typeof và xử lý từng trường hợp.
+type OrderId = number | string;
+type OrderStatus = "pending" | "paid" | "cancelled";
+
+function formatOrderId(id: OrderId): string {
+  // TODO: Kiểm tra typeof rồi xử lý.
   return "Chưa hoàn thành";
 }
 
-console.log(processInput("  hello  ")); // HELLO
-console.log(processInput(10));          // 20, dưới dạng chuỗi
-console.log(processInput(true));        // Đúng
-console.log(processInput(false));       // Sai
-console.log(processInput(null));        // Không hỗ trợ
-console.log(processInput([1, 2]));       // Không hỗ trợ
+// TODO: Khai báo Order.
+// TODO: Tạo đơn hàng và cập nhật status.
+
+console.log(formatOrderId(12));       // ORDER-12
+console.log(formatOrderId("web-12")); // WEB-12
 ```
 
-**Gợi ý:**
-
-- Dùng `.trim()` và `.toUpperCase()` cho chuỗi.
-- Dùng `String(value * 2)` trong nhánh số.
-- Không dùng `any` hoặc `as` trong lời giải.
+**Yêu cầu bổ sung:** Không dùng `any` hoặc `as` để bỏ qua kiểm tra kiểu.
 
 ---
 
-## 9. Năm câu hỏi lý thuyết
+### Bài tập 5 — Intersection cho sản phẩm có tồn kho
+
+**Kiến thức:** object type, intersection, readonly, optional.
+
+Khai báo:
+
+```typescript
+type Product = {
+  readonly id: number;
+  name: string;
+  price: number;
+};
+
+type Inventory = {
+  quantity: number;
+  warehouse?: string;
+};
+
+type StockProduct = Product & Inventory;
+```
+
+**Yêu cầu:**
+
+1. Tạo `StockProduct` có tên `"Bàn phím"`, giá `350000`, số lượng `4`.
+2. Viết hàm `getStockValue(product: StockProduct): number`.
+3. Hàm trả về `price * quantity`.
+4. In tên sản phẩm và tổng giá trị tồn kho.
+5. In kho hàng, hoặc `"Chưa xác định"` nếu không có.
+6. Thử bỏ `quantity` để quan sát lỗi rồi bổ sung lại.
+
+**Kết quả mong đợi khi không khai báo warehouse:**
+
+```text
+Bàn phím
+1400000
+Chưa xác định
+```
+
+**Câu cần giải thích:** Vì sao `StockProduct` cần đáp ứng cả `Product` và `Inventory`?
+
+---
+
+## 8. Năm câu hỏi lý thuyết
 
 ### Câu 1
 
-Khai báo kiểu và suy luận kiểu khác nhau thế nào?
+Interface và type alias giống nhau và khác nhau ở đâu?
 
-Với `let age = 20`, có thể gán tiếp `age = "20"` không? Vì sao?
+Cách nào có thể trực tiếp đặt tên cho `number | string`?
 
 ### Câu 2
 
-Mảng `number[]` khác tuple `[string, number]` ở đâu?
+`email?: string` và `readonly id: number` có ý nghĩa gì?
 
-Vì sao `[20, "Bao"]` không phù hợp với tuple trên?
+`readonly` có tự làm toàn bộ object bất biến khi chạy không?
 
 ### Câu 3
 
-Với khai báo sau, `Direction.Right` và `Direction[1]` có giá trị gì?
+`extends` khác declaration merging như thế nào?
 
-```typescript
-enum Direction {
-  Up,
-  Down,
-  Left,
-  Right,
-}
-```
-
-String enum có tự tạo ánh xạ ngược như numeric enum không?
+Điều gì xảy ra nếu hai interface cùng tên khai báo một thuộc tính lần lượt là `number` và `string`?
 
 ### Câu 4
 
-`any` và `unknown` đều nhận mọi kiểu giá trị. Chúng khác nhau thế nào khi gọi phương thức trên giá trị đó?
+`A | B` khác `A & B` như thế nào?
 
-Nên chọn kiểu nào cho dữ liệu chưa biết kiểu?
+Với hai kiểu dưới đây, kiểu `C` cần những thuộc tính nào?
+
+```typescript
+type A = {
+  name: string;
+};
+
+type B = {
+  age: number;
+};
+
+type C = A & B;
+```
 
 ### Câu 5
 
-Tại sao kiểm tra `typeof value === "string"` cho phép gọi `value.toUpperCase()` với biến `unknown`?
+Interface và type alias có tồn tại như đối tượng JavaScript khi chạy không?
 
-Dùng `value as string` có kiểm tra hoặc chuyển đổi dữ liệu lúc chạy không?
+Khai báo một biến theo interface có tự kiểm tra dữ liệu API hoặc xác nhận email hợp lệ không?
 
 ---
 
-## 10. Đáp án lý thuyết gợi ý
+## 9. Đáp án lý thuyết gợi ý
 
 <details>
 <summary>Mở sau khi tự trả lời</summary>
 
-1. Khai báo kiểu là viết rõ kiểu sau dấu `:`; suy luận kiểu là để TypeScript xác định từ giá trị hoặc ngữ cảnh. `let age = 20` được suy luận là `number`, nên không thể gán chuỗi `"20"`.
+### Đáp án câu 1
 
-2. `number[]` chứa các phần tử số với số lượng không quy định cụ thể. `[string, number]` mô tả hai phần tử theo thứ tự chuỗi rồi số. `[20, "Bao"]` sai kiểu tại cả hai vị trí.
+Cả hai đều có thể mô tả object và hàm.
 
-3. `Direction.Right` là `3`; `Direction[1]` là `"Down"`. String enum không tự tạo ánh xạ ngược.
+Interface hỗ trợ `extends` và hợp nhất khai báo. Type alias đặt tên được cho nhiều dạng kiểu, bao gồm kiểu cơ bản, tuple và union.
 
-4. `any` cho phép gọi phương thức mà không cần chứng minh kiểu phù hợp. `unknown` yêu cầu thu hẹp kiểu trước thao tác đặc thù. Nên ưu tiên `unknown` khi chưa biết kiểu dữ liệu và kiểm tra trước khi xử lý.
+Để đặt tên trực tiếp cho `number | string`, dùng:
 
-5. `typeof value === "string"` là một type guard, giúp TypeScript xác định giá trị là chuỗi trong nhánh đúng. `as string` chỉ khẳng định kiểu với trình kiểm tra; không xác thực hay chuyển đổi dữ liệu khi chạy.
+```typescript
+type ID = number | string;
+```
+
+### Đáp án câu 2
+
+- `email?: string`: có thể bỏ qua thuộc tính email.
+- `readonly id: number`: không được gán lại id thông qua kiểu đó.
+
+`readonly` không tự đóng băng object lúc chạy và không tự khiến toàn bộ dữ liệu lồng bên trong trở thành chỉ đọc.
+
+### Đáp án câu 3
+
+`extends` tạo một interface mới dựa trên kiểu đã có.
+
+Declaration merging gộp các khai báo cùng tên thành một interface.
+
+Nếu cùng một thuộc tính dữ liệu được khai báo với kiểu `number` và `string`, TypeScript báo lỗi vì các khai báo không tương thích.
+
+### Đáp án câu 4
+
+- `A | B`: giá trị đáp ứng ít nhất một kiểu.
+- `A & B`: giá trị đáp ứng đồng thời cả hai kiểu.
+
+`C` cần cả `name: string` và `age: number`.
+
+```typescript
+const person: C = {
+  name: "Bao",
+  age: 20,
+};
+```
+
+### Đáp án câu 5
+
+Interface và type alias không tồn tại như đối tượng JavaScript khi chạy. Các khai báo kiểu được xóa khi biên dịch.
+
+Chúng không tự xác thực dữ liệu API hoặc định dạng email. Muốn kiểm tra dữ liệu thực tế, cần viết logic xác thực khi chạy.
 
 </details>
 
 ---
 
-## 11. Checklist ôn tập
+## 10. Checklist ôn tập
 
-- [ ] Khai báo được `number`, `string`, `boolean`.
-- [ ] Tạo và thao tác được với mảng.
-- [ ] Hiểu thứ tự và kiểu dữ liệu của tuple.
-- [ ] Biết dùng destructuring.
-- [ ] Phân biệt numeric enum và string enum.
-- [ ] Hiểu rủi ro khi dùng `any`.
-- [ ] Xử lý được `unknown` bằng `typeof`.
-- [ ] Hoàn thành 5 bài tập.
-- [ ] Tự trả lời được 5 câu hỏi lý thuyết.
-
-> Các ví dụ là những đoạn độc lập. Khi thực hành, chạy từng ví dụ để tránh khai báo trùng tên biến.
+- [ ] Tôi tạo được object theo interface.
+- [ ] Tôi biết xử lý thuộc tính tùy chọn.
+- [ ] Tôi phân biệt được const và readonly.
+- [ ] Tôi dùng được extends.
+- [ ] Tôi hiểu declaration merging.
+- [ ] Tôi tạo được object type bằng type alias.
+- [ ] Tôi phân biệt được union và intersection.
+- [ ] Tôi biết kết hợp interface với type.
+- [ ] Tôi hiểu kiểu dữ liệu không tự xác thực dữ liệu runtime.
+- [ ] Tôi hoàn thành 5 bài tập và trả lời 5 câu hỏi.
